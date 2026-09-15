@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task02-backend
+  labels:
+    app: task02-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task02-backend
+  template:
+    metadata:
+      labels:
+        app: task02-backend
+    spec:
+      containers:
+        - name: network-multitool
+          image: wbitt/network-multitool
+          env:
+            - name: HTTP_PORT
+              value: "8080"
+            - name: HTTPS_PORT
+              value: "8443"
+          ports:
+            - name: http-multitool
+              protocol: TCP
+              containerPort: 8080
+            - name: https-multitool
+              protocol: TCP
+              containerPort: 8443
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

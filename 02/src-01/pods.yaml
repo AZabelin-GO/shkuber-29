@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+    name: network-check-nginx
+spec:
+    restartPolicy: Never
+    containers:
+        - name: multitool
+          image: wbitt/network-multitool
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "=== Check connection to Nginx ===" && curl -iv --connect-timeout 5 http://task01-ew:9001
+---
+apiVersion: v1
+kind: Pod
+metadata:
+    name: network-check-multitool
+spec:
+    restartPolicy: Never
+    containers:
+        - name: multitool
+          image: wbitt/network-multitool
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "=== Check connection to Multitool ===" && curl -iv --connect-timeout 5 http://task01-ew:9002
