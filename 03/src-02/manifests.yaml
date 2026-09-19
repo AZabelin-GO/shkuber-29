@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: task02
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: /data/task02
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: task02
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  volumeName: task02
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task02
+  labels:
+    app: task02
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task02
+  template:
+    metadata:
+      labels:
+        app: task02
+    spec:
+      initContainers:
+        - name: busybox-init
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Initializing shared volume (PVC)" | tee -a /shared/output.txt
+          volumeMounts:
+            - name: shared-data
+              mountPath: /shared
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                echo "$(date '+%Y-%m-%d %H:%M:%S') - hello from busybox" | tee -a /shared/output.txt
+                sleep 5
+              done
+          volumeMounts:
+            - name: shared-data
+              mountPath: /shared
+        - name: multitool
+          image: wbitt/network-multitool
+          command: ["tail"]
+          args:
+            - -f
+            - /shared/output.txt
+          volumeMounts:
+            - name: shared-data
+              mountPath: /shared
+              readOnly: true
+      volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: task02

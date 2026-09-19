@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task01
+  labels:
+    app: task01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task01
+  template:
+    metadata:
+      labels:
+        app: task01
+    spec:
+      initContainers:
+        - name: busybox-init
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Initializing shared volume" | tee /shared/output.txt
+          volumeMounts:
+            - name: shared-data
+              mountPath: /shared
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                echo "$(date '+%Y-%m-%d %H:%M:%S') - hello from busybox" | tee -a /shared/output.txt
+                sleep 5
+              done
+          volumeMounts:
+            - name: shared-data
+              mountPath: /shared
+        - name: multitool
+          image: wbitt/network-multitool
+          command: ["tail"]
+          args:
+            - -f
+            - /shared/output.txt
+          volumeMounts:
+            - name: shared-data
+              mountPath: /shared
+              readOnly: true
+      volumes:
+        - name: shared-data
+          emptyDir: {}
